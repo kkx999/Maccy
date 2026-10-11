@@ -1,0 +1,68 @@
+name: Build Maccy 0.30.0 Firefox
+
+on:
+  push:
+    branches:
+      - custom-0.30.0-firefox
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: macOS Apple Silicon (arm64)
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - name: Checkout Maccy 0.30.0 custom branch
+        uses: actions/checkout@v4
+
+      - name: Show Xcode version and target
+        run: |
+          xcodebuild -version
+          xcodebuild -list -project Maccy.xcodeproj
+
+      - name: Compile unsigned Maccy
+        shell: bash
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project Maccy.xcodeproj \
+            -scheme Maccy \
+            -configuration Release \
+            -sdk macosx \
+            -destination 'generic/platform=macOS' \
+            -derivedDataPath "$RUNNER_TEMP/maccy-build" \
+            ARCHS=arm64 \
+            ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build 2>&1 | tee "$RUNNER_TEMP/maccy-build.log"
+
+      - name: Ad-hoc sign and package the app
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP="$RUNNER_TEMP/maccy-build/Build/Products/Release/Maccy.app"
+          test -d "$APP"
+          /usr/bin/codesign --force --deep --sign - "$APP"
+          /usr/bin/codesign --force --sign - --entitlements Maccy/Maccy.entitlements "$APP"
+          /usr/bin/codesign --verify --deep --strict --verbose=2 "$APP"
+          /usr/bin/ditto -c -k --sequesterRsrc --keepParent "$APP" "$RUNNER_TEMP/Maccy-0.30.0-Firefox-arm64.zip"
+
+      - name: Upload app ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: Maccy-0.30.0-Firefox-arm64
+          path: ${{ runner.temp }}/Maccy-0.30.0-Firefox-arm64.zip
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maccy-build-log
+          path: ${{ runner.temp }}/maccy-build.log
+          if-no-files-found: ignore
+          retention-days: 7

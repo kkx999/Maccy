@@ -210,8 +210,15 @@ class Clipboard {
   }
 
   private func shouldIgnore(_ types: Set<NSPasteboard.PasteboardType>) -> Bool {
-    let ignoredTypes = self.ignoredTypes
+    var ignoredTypes = self.ignoredTypes
       .union(UserDefaults.standard.ignoredPasteboardTypes.map({ NSPasteboard.PasteboardType($0) }))
+
+    // Firefox private windows mark copied page text as concealed.
+    // Permit this type only when Firefox is the frontmost application;
+    // keep protection for password managers and all other applications.
+    if sourceApp?.bundleIdentifier == "org.mozilla.firefox" {
+      ignoredTypes.remove(.concealed)
+    }
 
     return types.isDisjoint(with: enabledTypes) ||
       !types.isDisjoint(with: ignoredTypes)

@@ -3,7 +3,9 @@ name: Build Maccy 0.30.0 Firefox
 on:
   push:
     branches:
-      - custom-0.30.0-firefox
+      - main
+    tags:
+      - 'v0.30.0-firefox.*'
   workflow_dispatch:
 
 permissions:
@@ -15,7 +17,7 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 60
     steps:
-      - name: Checkout Maccy 0.30.0 custom branch
+      - name: Checkout Maccy 0.30.0
         uses: actions/checkout@v4
 
       - name: Show Xcode version and target
@@ -58,25 +60,26 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Publish GitHub Release
+      - name: Publish GitHub Release only for new version tags
+        if: startsWith(github.ref, 'refs/tags/v0.30.0-firefox.')
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          RELEASE_TAG: v0.30.0-firefox.1
+          RELEASE_TAG: ${{ github.ref_name }}
         run: |
           set -euo pipefail
           ARCHIVE="$RUNNER_TEMP/Maccy-0.30.0-Firefox-arm64.zip"
           test -s "$ARCHIVE"
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release upload "$RELEASE_TAG" "$ARCHIVE" --clobber
-          else
-            gh release create "$RELEASE_TAG" "$ARCHIVE" \
-              --target "$GITHUB_SHA" \
-              --title "Maccy 0.30.0 Firefox 无痕复制修改版" \
-              --notes-file RELEASE-NOTES.md \
-              --latest=false
+            echo "::error::Release $RELEASE_TAG already exists; existing assets will never be overwritten."
+            exit 1
           fi
+          gh release create "$RELEASE_TAG" "$ARCHIVE" \
+            --target "$GITHUB_SHA" \
+            --title "Maccy 0.30.0 Firefox 无痕复制修改版 ($RELEASE_TAG)" \
+            --notes-file RELEASE-NOTES.md \
+            --latest=false
 
       - name: Upload build log on failure
         if: failure()

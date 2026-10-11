@@ -1,6 +1,6 @@
 # Maccy 0.30.0 Firefox 无痕复制修改版
 
-此分支从官方 Maccy **0.30.0** 标签对应提交 `74f50c487aaed6de55c486e3264bd890fcacfb12` 创建，与 `master` 完全独立。
+当前仓库仅保留 `main` 默认分支，源码基于官方 Maccy **0.30.0** 对应提交 `74f50c487aaed6de55c486e3264bd890fcacfb12`。
 
 ## 改动
 
@@ -12,7 +12,7 @@ Maccy 对 Chrome、密码管理器及其他应用的原始过滤规则保持不�
 
 1. 打开仓库的 [Actions](https://github.com/kkx999/Maccy/actions)。
 2. 如 GitHub 提示 Fork 的工作流默认停用，点击 **I understand my workflows, go ahead and enable them**。
-3. 找到 **Build Maccy 0.30.0 Firefox**；本分支提交时可自动触发，或在启用后手动运行（手动运行是否可见取决于 GitHub 对默认分支的工作流检测）。
+3. 找到 **Build Maccy 0.30.0 Firefox**；推送到 `main` 会自动编译，也可在 Actions 页面手动运行。编译完成仅生成 Actions Artifacts，不会覆盖已发布的 Release。
 4. 构建成功后在对应运行的 **Artifacts** 下载 `Maccy-0.30.0-Firefox-arm64`。
 5. 解压下载的 artifact ZIP，如内部仍有 `Maccy-0.30.0-Firefox-arm64.zip`，再解压得到 `Maccy.app`。
 6. **先备份旧版 Maccy 历史及配置，再退出旧版应用**。用修改版替换 `/Applications/Maccy.app`。
@@ -22,3 +22,9 @@ Maccy 对 Chrome、密码管理器及其他应用的原始过滤规则保持不�
 此版本沿用原版 `org.p0deje.Maccy` Bundle ID，以便替换原版；使用免费的 **Ad-hoc 签名**，不是 Apple Developer ID 签名，也未经过 Apple 公证。替换签名可能导致既有权限失效，需要重新授权。请勿在修改版上通过官方更新功能升级，否则可能恢复官方过滤逻辑。
 
 本工作流仅为 **arm64 Apple Silicon Mac** 构建；编译成功和真实设备上 Firefox 无痕复制恢复须分别验证。
+
+## 发布新版本
+
+现有安装包：[v0.30.0-firefox.1](https://github.com/kkx999/Maccy/releases/tag/v0.30.0-firefox.1)。为保护已发布文件，`main` 的普通提交**只构建、不自动发布**。
+
+需要发布新安装包时，先确认 `main` 的构建成功，再从需要发布的提交创建并推送全新标签，例如 `v0.30.0-firefox.2`。GitHub Actions 只在推送匹配 `v0.30.0-firefox.*` 的新标签时自动创建 Release；如果同名 Release 已存在，则拒绝覆盖。
